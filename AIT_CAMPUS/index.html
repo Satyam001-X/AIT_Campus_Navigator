@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AIT UniNav - Army Institute of Technology Campus Maps & Navigation (Pune)</title>
+  <meta name="description" content="Interactive Google Maps-inspired campus navigation for Army Institute of Technology (AIT), Pune. Turn-by-turn routing to Academic Blocks, Aryabhatta Library, Manekshaw Hall, Hostels (OBH, NBH, KCGH), Mess, and Sports Arena.">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app-container">
+
+    <!-- Leaflet Map Container -->
+    <div id="map-view"></div>
+
+    <!-- Floating Top Search Bar & Categories -->
+    <header class="floating-top-bar">
+      <div class="search-box-card" id="search-box-card">
+        <button class="search-icon-btn" id="menu-toggle-btn" title="Toggle Navigation Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        
+        <input type="text" id="campus-search-input" placeholder="Search AIT buildings, labs, hostels, mess, Canteen..." autocomplete="off">
+        
+        <div class="search-actions">
+          <button class="icon-action-btn hidden" id="search-clear-btn" title="Clear Search">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+          <button class="icon-action-btn" id="voice-search-btn" title="Voice Search">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+          </button>
+          <button class="icon-action-btn" id="open-directions-btn" title="Directions">
+            <i data-lucide="navigation" class="w-4 h-4 text-blue-600"></i>
+          </button>
+          <div class="user-avatar-btn" id="profile-btn" title="AIT Cadet Profile">
+            AIT
+          </div>
+        </div>
+
+        <!-- Search Autocomplete Dropdown -->
+        <div class="search-dropdown-menu" id="search-dropdown-menu">
+          <!-- Dynamic Autocomplete Results Inserted Here -->
+        </div>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <nav class="category-chips-scroll" id="category-chips-bar" aria-label="Campus Categories">
+        <button class="filter-chip active" data-category="all">
+          <i data-lucide="compass"></i>
+          <span>All AIT Campus</span>
+        </button>
+        <button class="filter-chip" data-category="academic">
+          <i data-lucide="graduation-cap"></i>
+          <span>Academic & Depts</span>
+        </button>
+        <button class="filter-chip" data-category="study">
+          <i data-lucide="book-open"></i>
+          <span>Aryabhatta Library</span>
+        </button>
+        <button class="filter-chip" data-category="housing">
+          <i data-lucide="home"></i>
+          <span>Hostels (OBH/NBH/KCGH)</span>
+        </button>
+        <button class="filter-chip" data-category="dining">
+          <i data-lucide="utensils"></i>
+          <span>Mess & Canteen</span>
+        </button>
+        <button class="filter-chip" data-category="sports">
+          <i data-lucide="dumbbell"></i>
+          <span>Sports & Gym</span>
+        </button>
+        <button class="filter-chip" data-category="admin">
+          <i data-lucide="landmark"></i>
+          <span>Admin & Gate</span>
+        </button>
+        <button class="filter-chip" data-category="health">
+          <i data-lucide="cross"></i>
+          <span>MI Room & Health</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Google Maps Side Panel Drawer -->
+    <aside class="sidebar-panel" id="sidebar-panel">
+      <div class="panel-content-scroll" id="panel-content-scroll">
+        
+        <!-- View 1: Default Explore Campus View -->
+        <div id="view-explore" class="panel-view-section">
+          
+          <!-- College Header Banner -->
+          <div style="margin-bottom: 14px; padding: 12px; background: linear-gradient(135deg, #1e3a8a, #172554); border-radius: 12px; color: white; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 9999px;">AIT Pune</span>
+              <span style="font-size: 11px; opacity: 0.85;">Dighi Hills, Pune</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif;">Army Institute of Technology</h3>
+            <p style="font-size: 11.5px; opacity: 0.85; font-style: italic;">"Onward to Glory"</p>
+          </div>
+
+          <!-- Quick Cadet Tools Grid -->
+          <div class="quick-tools-grid">
+            <div class="quick-tool-card" id="tool-my-class">
+              <div class="tool-icon-wrapper">
+                <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div class="tool-info">
+                <h4>Find My Class</h4>
+                <p>COMP 301 in 20 min</p>
+              </div>
+            </div>
+            
+            <div class="quick-tool-card" id="tool-shuttle-tracker">
+              <div class="tool-icon-wrapper">
+                <i data-lucide="bus" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div class="tool-info">
+                <h4>College Bus</h4>
+                <p>Campus & City Loop</p>
+              </div>
+            </div>
+
+            <div class="quick-tool-card" id="tool-campus-tour">
+              <div class="tool-icon-wrapper">
+                <i data-lucide="camera" class="w-5 h-5 text-purple-600"></i>
+              </div>
+              <div class="tool-info">
+                <h4>Virtual 360°</h4>
+                <p>AIT 360 Panoramas</p>
+              </div>
+            </div>
+
+            <div class="quick-tool-card" id="tool-night-safety">
+              <div class="tool-icon-wrapper">
+                <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
+              </div>
+              <div class="tool-info">
+                <h4>MI Room & SOS</h4>
+                <p>24/7 Ambulance & Guard</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Campus Bus Banner -->
+          <div class="shuttle-live-card" id="shuttle-live-card">
+            <div class="shuttle-card-header">
+              <span class="shuttle-live-badge">
+                <span class="pulse-dot"></span> AIT Transit Shuttle
+              </span>
+              <span class="text-xs opacity-80">Every 15 mins</span>
+            </div>
+            <div class="shuttle-info-row">
+              <div>
+                <div class="shuttle-next-eta">3 mins away</div>
+                <div class="shuttle-stops-preview">Arriving at Main Gate (Alandi Road)</div>
+              </div>
+              <button class="icon-action-btn" style="background: rgba(255,255,255,0.2); color: white;" id="track-shuttle-btn" title="Focus Bus on Map">
+                <i data-lucide="locate-fixed" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Explore Featured Places -->
+          <div class="explore-section-title">
+            <span>AIT Campus Landmarks</span>
+            <span class="explore-badge">Live Status</span>
+          </div>
+
+          <div class="campus-places-list" id="popular-places-list">
+            <!-- Dynamic building cards injected by app.js -->
+          </div>
+        </div>
+
+        <!-- View 2: Directions & Route Planning View -->
+        <div id="view-directions" class="panel-view-section" style="display: none;">
+          <div class="directions-header-box">
+            <div class="route-inputs-container">
+              <div class="route-input-row">
+                <div class="route-dot-start"></div>
+                <input type="text" id="route-start-input" class="route-input-field" placeholder="Choose starting point..." value="Your Current Location">
+              </div>
+              
+              <button class="route-swap-btn" id="route-swap-btn" title="Swap Start and Destination">
+                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+              </button>
+              
+              <div class="route-input-row">
+                <div class="route-dot-end"></div>
+                <input type="text" id="route-dest-input" class="route-input-field" placeholder="Choose destination...">
+              </div>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="travel-modes-bar" id="travel-modes-bar">
+              <button class="mode-tab-btn active" data-mode="walk" title="Walking">
+                <i data-lucide="footprints" class="w-4 h-4"></i>
+                <span>Walk</span>
+              </button>
+              <button class="mode-tab-btn" data-mode="bike" title="Bicycle">
+                <i data-lucide="bike" class="w-4 h-4"></i>
+                <span>Bicycle</span>
+              </button>
+              <button class="mode-tab-btn" data-mode="shuttle" title="College Bus / Cart">
+                <i data-lucide="bus" class="w-4 h-4"></i>
+                <span>Bus</span>
+              </button>
+              <button class="mode-tab-btn" data-mode="accessible" title="Wheelchair Accessible & Ramps">
+                <i data-lucide="accessibility" class="w-4 h-4"></i>
+                <span>Ramps</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Route Summary -->
+          <div id="route-result-container">
+            <div class="route-summary-card">
+              <div class="route-time-headline">
+                <span class="route-minutes" id="route-duration-text">-- min</span>
+                <span class="route-distance" id="route-distance-text">(-- m)</span>
+              </div>
+              <div class="route-eco-badges" id="route-eco-badges">
+                <!-- Injected Badges (steps, cal, co2) -->
+              </div>
+              <button class="start-navigation-cta" id="start-nav-btn">
+                <i data-lucide="play" class="w-4 h-4 fill-white"></i>
+                <span>Start Live Navigation</span>
+              </button>
+            </div>
+
+            <!-- Turn-by-Turn Steps List -->
+            <div class="turn-steps-list" id="turn-steps-list">
+              <!-- Injected by app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- View 3: Building & Place Details View -->
+        <div id="view-building-details" class="panel-view-section" style="display: none;">
+          <div class="building-hero-container">
+            <img src="" id="building-hero-img" class="building-hero-img" alt="Building Preview">
+            <span class="building-category-tag" id="building-cat-badge">Academic</span>
+          </div>
+
+          <div class="building-title-header">
+            <h2 class="building-name" id="building-name">Main Academic Block</h2>
+            <p class="building-subtitle" id="building-subtitle">Directorate & Administration</p>
+          </div>
+
+          <div class="place-card-stats" style="margin-bottom: 12px;">
+            <div class="rating-pill">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
+              <span id="building-rating">4.9</span>
+            </div>
+            <span class="text-xs text-slate-500">(<span id="building-reviews">420</span> reviews)</span>
+            <span>•</span>
+            <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400" id="building-hours-status">Open Now</span>
+          </div>
+
+          <div class="place-actions-row">
+            <button class="place-action-btn primary-btn" id="bldg-directions-btn">
+              <i data-lucide="navigation-2" class="w-4 h-4"></i>
+              <span>Directions</span>
+            </button>
+            <button class="place-action-btn" id="bldg-save-btn">
+              <i data-lucide="bookmark" class="w-4 h-4"></i>
+              <span>Save</span>
+            </button>
+            <button class="place-action-btn" id="bldg-indoor-btn">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+              <span>Indoor Plan</span>
+            </button>
+            <button class="place-action-btn" id="bldg-share-btn">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+              <span>Share</span>
+            </button>
+          </div>
+
+          <!-- Indoor Schematic Container -->
+          <div id="building-indoor-container" class="mt-3 mb-4">
+            <!-- Rendered by IndoorMapRenderer -->
+          </div>
+
+          <div class="detail-info-row">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <div>
+              <div class="font-semibold text-slate-700 dark:text-slate-200">Hours of Operation</div>
+              <div class="text-xs text-slate-500" id="building-hours-text">8:30 AM - 5:30 PM</div>
+            </div>
+          </div>
+
+          <div class="detail-info-row">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+            <div>
+              <div class="font-semibold text-slate-700 dark:text-slate-200">Live Occupancy</div>
+              <div class="text-xs text-slate-500" id="building-occupancy-text">Moderate (55% capacity)</div>
+            </div>
+          </div>
+
+          <div class="detail-info-row">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <div>
+              <div class="font-semibold text-slate-700 dark:text-slate-200">About this Facility</div>
+              <div class="text-xs text-slate-500" id="building-desc-text">State-of-the-art facility...</div>
+            </div>
+          </div>
+
+          <div class="detail-info-row">
+            <i data-lucide="tag" class="w-4 h-4"></i>
+            <div id="building-tags-container" class="flex flex-wrap gap-1 mt-1">
+              <!-- Injected Tag Badges -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Floating Map Controls (Right Side) -->
+    <div class="map-floating-controls">
+      <button class="map-control-btn" id="ctrl-layer-toggle" title="Toggle Map Layer (Satellite / Light / Dark)">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+      </button>
+      <button class="map-control-btn" id="ctrl-3d-toggle" title="Toggle 3D Buildings View">
+        <i data-lucide="box" class="w-5 h-5"></i>
+      </button>
+      <button class="map-control-btn" id="ctrl-recenter-btn" title="Center on My Location">
+        <i data-lucide="crosshair" class="w-5 h-5"></i>
+      </button>
+      <button class="map-control-btn sos-floating-btn" id="ctrl-sos-btn" title="Emergency MI Room & Guard">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Multi-Floor Level Floating Selector -->
+    <div class="floor-selector-widget" id="floor-selector-widget">
+      <button class="floor-btn" data-floor="2">2</button>
+      <button class="floor-btn active" data-floor="1">1</button>
+      <button class="floor-btn" data-floor="0">G</button>
+    </div>
+
+    <!-- Live Navigation Heads-Up Display (Top Banner) -->
+    <div class="live-nav-hud-top" id="live-nav-hud-top">
+      <div class="nav-green-card">
+        <div class="nav-turn-icon-big" id="hud-turn-icon">
+          <i data-lucide="arrow-up" class="w-7 h-7"></i>
+        </div>
+        <div class="nav-instruction-main">
+          <div class="nav-distance-callout" id="hud-distance-text">In 40 m</div>
+          <div class="nav-step-text" id="hud-instruction-text">Turn right onto Central Academic Walkway</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Navigation HUD (Bottom Control Card) -->
+    <div class="live-nav-hud-bottom" id="live-nav-hud-bottom">
+      <div class="nav-trip-stats">
+        <div class="nav-eta-time" id="hud-eta-text">ETA: 2 min</div>
+        <div class="nav-remaining-info" id="hud-remaining-text">160 m remaining • 80 m/min</div>
+      </div>
+      <div class="nav-controls-group">
+        <button class="nav-speed-btn" id="nav-speed-multiplier-btn">1x Speed</button>
+        <button class="icon-action-btn" id="nav-voice-mute-btn" title="Voice Guidance Mute/Unmute">
+          <i data-lucide="volume-2" class="w-4 h-4"></i>
+        </button>
+        <button class="nav-end-btn" id="nav-end-trip-btn" title="End Navigation">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal: "Find My Class" Schedule Timetable Navigator -->
+  <div class="modal-overlay" id="modal-schedule">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+          <h3>AIT Class Timetable & Navigator</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modal-schedule">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="modal-body-scroll">
+        <p class="text-xs text-slate-500 mb-4">Click "Route" on any class to calculate fastest path directly to the department laboratory or lecture hall.</p>
+        <div id="schedule-classes-container">
+          <!-- Injected by app.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Campus Emergency SOS Beacon -->
+  <div class="modal-overlay" id="modal-sos">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-red-600"></i>
+          <h3 class="text-red-600">AIT Campus Emergency & MI Room</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modal-sos">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="sos-banner">
+          <i data-lucide="phone-call" class="w-8 h-8 text-red-600 flex-shrink-0"></i>
+          <div>
+            <div class="font-bold text-red-800 dark:text-red-300 text-sm">24/7 Security & Medical Helpdesk</div>
+            <div class="text-xs text-red-600 dark:text-red-400">Quarter Guard Security Checkpost & MI Room Resident Doctor.</div>
+          </div>
+        </div>
+
+        <button class="sos-call-btn" id="call-police-btn">
+          <i data-lucide="phone" class="w-5 h-5"></i>
+          <span>Call Main Security Guard: (020) 2715-7534</span>
+        </button>
+
+        <button class="start-navigation-cta" style="background: #16a34a; margin-bottom: 12px;" id="route-nearest-sos-btn">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          <span>Route to Medical Inspection (MI) Room</span>
+        </button>
+
+        <button class="place-action-btn" style="width: 100%;" id="request-escort-btn">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Contact Hostel Warden On-Duty</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Virtual 360° Photo Tour Preview -->
+  <div class="modal-overlay" id="modal-virtual-tour">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <i data-lucide="camera" class="w-5 h-5 text-purple-600"></i>
+          <h3>AIT Campus 360° Photo Tour</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modal-virtual-tour">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="modal-body-scroll">
+        <div id="tour-carousel-container">
+          <!-- Injected 360 interactive photographic panorama cards -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="campus-data.js"></script>
+  <script src="routing-engine.js"></script>
+  <script src="indoor-maps.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
